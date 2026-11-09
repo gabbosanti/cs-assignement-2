@@ -1,4 +1,4 @@
-package sisco.ass02.n_body_seq;
+package sisco.ass02.n_body_seq.view;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;

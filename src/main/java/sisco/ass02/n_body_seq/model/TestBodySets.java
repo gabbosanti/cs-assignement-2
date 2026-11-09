@@ -1,4 +1,4 @@
-package sisco.ass02.n_body_seq;
+package sisco.ass02.n_body_seq.model;
 
 import java.util.ArrayList;
 
