@@ -1,5 +1,8 @@
 package sisco.ass02.n_body_seq.view;
 
+import sisco.ass02.n_body_seq.model.Body;
+import sisco.ass02.n_body_seq.model.P2d;
+
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;

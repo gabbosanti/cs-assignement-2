@@ -1,5 +1,8 @@
 package sisco.ass02.n_body_seq;
 
+import sisco.ass02.n_body_seq.controller.NBodySimulation;
+import sisco.ass02.n_body_seq.view.SimulationView;
+
 /**
  *
  * N-Body simulation - simple sequential version - vith a GUI

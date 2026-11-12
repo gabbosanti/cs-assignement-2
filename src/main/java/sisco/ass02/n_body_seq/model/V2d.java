@@ -1,5 +1,7 @@
 package sisco.ass02.n_body_seq.model;
 
+import sisco.ass02.n_body_seq.exceptions.NullVectorException;
+
 /**
  * 
  * A vector in a 2D space

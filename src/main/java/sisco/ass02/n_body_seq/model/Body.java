@@ -1,5 +1,7 @@
 package sisco.ass02.n_body_seq.model;
 
+import sisco.ass02.n_body_seq.exceptions.InfiniteForceException;
+
 public class Body {
     
 	private static final double G_CONST_SCALED = 0.001;

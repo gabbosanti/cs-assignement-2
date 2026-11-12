@@ -1,5 +1,7 @@
 package sisco.ass02.n_body_seq;
 
+import sisco.ass02.n_body_seq.controller.NBodySimulation;
+
 import java.util.ArrayList;
 
 /**

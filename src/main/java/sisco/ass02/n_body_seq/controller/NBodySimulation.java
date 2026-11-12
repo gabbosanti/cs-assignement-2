@@ -1,5 +1,10 @@
 package sisco.ass02.n_body_seq.controller;
 
+import sisco.ass02.n_body_seq.model.Body;
+import sisco.ass02.n_body_seq.model.P2d;
+import sisco.ass02.n_body_seq.model.V2d;
+import sisco.ass02.n_body_seq.view.SimulationView;
+
 import java.util.*;
 
 public class NBodySimulation {
