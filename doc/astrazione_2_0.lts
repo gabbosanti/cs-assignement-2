@@ -1,0 +1,51 @@
+const W = 3
+range Workers = 0..W-1
+
+// Un worker per corpo.
+// Le azioni indicizzate sono specifiche del worker.
+// Le azioni senza indice sincronizzano i partecipanti.
+
+WORKER(I=0) = (
+    compute_forces[I]
+    -> forces_ready
+    -> update_pos[I]
+    -> positions_ready
+    -> frame_done
+    -> WORKER
+).
+
+// Processo grafico
+GUI = (
+    positions_ready
+    -> render
+    -> frame_done
+    -> GUI
+).
+
+// Composizione dei tre worker
+||WORKERS = (
+    forall [i:Workers] WORKER(i)
+).
+
+// Sistema completo
+||SYSTEM = (
+    WORKERS || GUI
+).
+
+//fluent
+
+fluent COMPUTING[i:Workers] =
+    <compute_forces[i], forces_ready>
+
+fluent UPDATING[i:Workers] =
+    <update_pos[i], positions_ready>
+
+//safety
+
+assert NO_PHASE_OVERLAP =
+    [] (forall [i:Workers]
+        (forall [j:Workers]
+            !(COMPUTING[i] && UPDATING[j])))
+
+// Il sistema deve continuare a produrre frame
+progress FRAMES = {render}
