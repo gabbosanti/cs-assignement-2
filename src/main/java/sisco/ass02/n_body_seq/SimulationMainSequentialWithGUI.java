@@ -1,6 +1,6 @@
 package sisco.ass02.n_body_seq;
 
-import sisco.ass02.n_body_seq.controller.NBodySimulation;
+import sisco.ass02.n_body_seq.controller.NBodySimulationSequential;
 import sisco.ass02.n_body_seq.view.SimulationView;
 
 /**
@@ -9,14 +9,14 @@ import sisco.ass02.n_body_seq.view.SimulationView;
  * 
  * @author aricci
  */
-public class SimulationMainWithGUI {
+public class SimulationMainSequentialWithGUI {
 
     public static void main(String[] args) {
 
     	int nSteps = 50000;
 
     	SimulationView view = new SimulationView(620,620);
-    	NBodySimulation sim = new NBodySimulation(view);
+    	NBodySimulationSequential sim = new NBodySimulationSequential(view);
     	
     	// sim.init(TestBodySets.bodySet_two_bodies());
     	// sim.init(TestBodySets.bodySet_three_bodies());    	

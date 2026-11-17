@@ -1,8 +1,6 @@
 package sisco.ass02.n_body_seq;
 
-import sisco.ass02.n_body_seq.controller.NBodySimulation;
-
-import java.util.ArrayList;
+import sisco.ass02.n_body_seq.controller.NBodySimulationSequential;
 
 /**
  * 
@@ -10,12 +8,12 @@ import java.util.ArrayList;
  * 
  * @author aricci
  */
-public class SimulationMain {
+public class SimulationMainSequential {
 
     public static void main(String[] args) {
 
     	
-    	NBodySimulation sim = new NBodySimulation();
+    	NBodySimulationSequential sim = new NBodySimulationSequential();
     	
     	// sim.init(TestBodySets.bodySet_two_bodies());
     	// sim.init(TestBodySets.bodySet_three_bodies());    	
