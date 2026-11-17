@@ -7,20 +7,25 @@ import sisco.ass02.n_body_seq.model.V2d;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class NBodySimulationExecutor {
 
-	private ExecutorService exec;
-    List<Body> bodies;
+	private final ExecutorService executor;
+    private final List<Callable<Void>> forceTasks;
+    private final List<Callable<Void>> positionTasks;
+
+    private List<Body> bodies;
     private double vt;
 	double dt;
 
 	public NBodySimulationExecutor() {
-        this.exec = Executors.newFixedThreadPool(
+        this.executor = Executors.newFixedThreadPool(
                Runtime.getRuntime().availableProcessors() + 1);
+
     }
 
 	public void initRandom(int nBodies) {
@@ -37,48 +42,28 @@ public class NBodySimulationExecutor {
 		}
 	}
 
-	public void run(long nSteps) {
+	public void execute(long nSteps) throws InterruptedException {
 
 		/* init virtual time */
 		vt = 0;
 		dt = 0.001;
 
 		long iter = 0;
-		/* simulation loop */
 
-		while (iter < nSteps) {
+        try {
+            /* simulation loop */
+            while (iter < nSteps) {
 
-			/* update bodies velocity */
-			for (int i = 0; i < bodies.size(); i++) {
-				Body b = bodies.get(i);
-                exec.execute(new ComputeElemTask(i,j,matA,matB,matC));
-				/* compute total force on bodies */
-				V2d totalForce = computeTotalGForceOnBody(b);
+                executor.invokeAll(forceTasks);
 
-				/* compute instant acceleration */
-				V2d acc = new V2d(totalForce).scalarMul(1.0 / b.getMass());
+                executor.invokeAll(positionTasks);
 
-				/* update velocity */
-				b.updateVelocity(acc, dt);
-			}
-
-			/* compute bodies new pos */
-
-
-			for (Body b : bodies) {
-				b.updatePos(dt);
-			}
-
-			/* update virtual time */
-
-			vt = vt + dt;
-			iter++;
-
-
-		}
-
-        exec.shutdown();
-        exec.awaitTermination(Long.MAX_VALUE,TimeUnit.SECONDS);
+                iter++;
+            }
+        } finally {
+            executor.awaitTermination(Long.MAX_VALUE,TimeUnit.SECONDS);
+            executor.shutdown();
+        }
 	}
 
 	/*

@@ -9,7 +9,7 @@ import sisco.ass02.n_body_seq.view.SimulationView;
  * 
  * @author aricci
  */
-public class SimulationMainSequentialWithGUI {
+public class SimulationMainWithGUI {
 
     public static void main(String[] args) {
 
