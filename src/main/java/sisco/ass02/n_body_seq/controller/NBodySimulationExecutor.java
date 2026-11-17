@@ -1,6 +1,7 @@
 package sisco.ass02.n_body_seq.controller;
 
 import sisco.ass02.n_body_seq.model.Body;
+import sisco.ass02.n_body_seq.model.ComputeForceTask;
 import sisco.ass02.n_body_seq.model.P2d;
 import sisco.ass02.n_body_seq.model.V2d;
 
@@ -19,18 +20,22 @@ public class NBodySimulationExecutor {
     private final List<Callable<Void>> positionTasks;
 
     private List<Body> bodies;
+	private int numWorkers;
     private double vt;
 	double dt;
 
 	public NBodySimulationExecutor() {
         this.executor = Executors.newFixedThreadPool(
                Runtime.getRuntime().availableProcessors() + 1);
-
+        this.forceTasks = new ArrayList<>();
+        this.positionTasks = new ArrayList<>();
     }
 
 	public void initRandom(int nBodies) {
 		Random rand = new Random(System.currentTimeMillis());
 		bodies = new ArrayList<Body>();
+
+		//Crea randomicamente i corpi
 		for (int i = 0; i < nBodies; i++) {
 			double x = -1.0 + 2.0*rand.nextDouble();
 			double y = -1.0 + 2.0*rand.nextDouble();
@@ -39,7 +44,13 @@ public class NBodySimulationExecutor {
 			double m = 1 + rand.nextDouble()*9;
 			Body b = new Body(i, new P2d(x, y), new V2d(vx, vy), 0.01, m);
 			bodies.add(b);
+
+			this.forceTasks.add(new ComputeForceTask());
+
 		}
+
+
+
 	}
 
 	public void execute(long nSteps) throws InterruptedException {
@@ -64,26 +75,6 @@ public class NBodySimulationExecutor {
             executor.awaitTermination(Long.MAX_VALUE,TimeUnit.SECONDS);
             executor.shutdown();
         }
-	}
-
-	/*
-	 * TASK
-	 * Compute the total G force exterted on a body by the other bodies
-	 *
-	 */
-	private V2d computeTotalGForceOnBody(Body b) {
-		V2d totalForce = new V2d(0, 0);
-		for (int j = 0; j < bodies.size(); j++) {
-			Body otherBody = bodies.get(j);
-			if (!b.equals(otherBody)) {
-				try {
-					V2d forceByOtherBody = b.computeGForceBy(otherBody);
-					totalForce.sum(forceByOtherBody);
-				} catch (Exception ex) {
-				}
-			}
-		}
-		return totalForce;
 	}
 
 	public int getNumBodies() {
