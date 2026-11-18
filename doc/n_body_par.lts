@@ -1,0 +1,152 @@
+/* =====================================================================
+ * Modello FSP (approssimato) della versione concorrente a thread
+ * della simulazione N-Body: package sisco.ass02.n_body_par
+ *
+ * Corrispondenza con il codice Java:
+ *   MASTER   -> Master.execute()      (crea lo stato, start() e join() dei worker)
+ *   WORKER   -> Worker.run()          (M step: fase A, barriera, fase B, barriera)
+ *   BARRIER  -> sync.Barrier          (monitor: count + generation, signalAll)
+ *   fc       -> barriera "forcesComputed" (fine fase A, nessuna azione)
+ *   sc       -> barriera "stepCompleted"  (fine step, azione = advanceTime)
+ *
+ * Approssimazioni (scelte per tenere piccolo lo spazio degli stati):
+ *   - i dati (corpi, posizioni, velocità) non sono modellati: le fasi A e B
+ *     sono ridotte a una sola azione ciascuna (compute_vel, update_pos);
+ *     la loro "durata" è rappresentata dai fluent in fondo al file;
+ *   - la partizione dei corpi tra worker non compare: ogni worker è
+ *     un'unica entità che lavora "sulla propria fetta";
+ *   - il lock del monitor non è modellato esplicitamente: ogni azione della
+ *     barriera è atomica, come lo è il corpo di hitAndWaitAll() tra
+ *     lock() e unlock();
+ *   - la generazione è contata modulo 2: basta, perché un thread fermo
+ *     sulla generazione g impedisce che la barriera arrivi a g+2
+ *     (serve anche il suo arrivo per rilasciare g+1);
+ *   - K e M sono piccoli; il comportamento non dipende dai loro valori.
+ * ===================================================================== */
+
+const K = 2              // numero di worker (Master.nWorkers)
+const M = 2              // numero di step   (Master.nSteps)
+
+range W = 0..K-1         // identificativi dei worker
+range S = 0..M           // contatore degli step del worker
+range C = 0..K-1         // count della barriera (thread arrivati e in attesa)
+range G = 0..1           // generation della barriera, modulo 2
+
+
+/* ---------------------------------------------------------------------
+ * BARRIER: monitor ciclico (sync.Barrier.hitAndWaitAll)
+ *
+ *   arrive[w][g] : il worker w entra nel monitor durante la generazione g
+ *                  ed esegue count++ (myGeneration = g)
+ *   action       : l'ultimo arrivato esegue barrierAction.run()
+ *                  e poi count = 0, generation++, signalAll()
+ *   pass[w][g]   : il worker w, in attesa sulla generazione g, esce dal
+ *                  while (myGeneration == generation): possibile solo
+ *                  quando la generazione corrente è diversa da g
+ * --------------------------------------------------------------------- */
+BARRIER = B[0][0],
+B[c:C][g:G] = (
+      // non ultimo: si mette in attesa sulla condition
+      when (c < K-1)  arrive[w:W][g] -> B[c+1][g]
+      // ultimo: azione di barriera, riarmo e risveglio di tutti
+    | when (c == K-1) arrive[w:W][g] -> action -> B[0][1-g]
+      // chi aspettava la generazione precedente può ripartire
+    | pass[w:W][1-g] -> B[c][g]
+      // barriera vuota: quando execute() ritorna l'oggetto non è più usato
+      // (serve solo a far terminare il modello senza un falso deadlock)
+    | when (c == 0) dispose -> END
+).
+
+
+/* ---------------------------------------------------------------------
+ * WORKER: Worker.run()
+ *
+ *   for (step = 0; step < nSteps; step++) {
+ *       computeVelocities();              // fase A
+ *       forcesComputed.hitAndWaitAll();
+ *       updatePositions();                // fase B
+ *       stepCompleted.hitAndWaitAll();    // l'ultimo fa vt += dt
+ *   }
+ *
+ * start[I] e join[I] sincronizzano il worker con il master
+ * (Thread.start() e Thread.join()).
+ * --------------------------------------------------------------------- */
+WORKER(I=0) = (start[I] -> STEP[0]),
+STEP[s:S] = if (s < M)
+    then ( compute_vel[I]
+           -> fc.arrive[I][g:G] -> fc.pass[I][g]
+           -> update_pos[I]
+           -> sc.arrive[I][h:G] -> sc.pass[I][h]
+           -> STEP[s+1] )
+    else ( join[I] -> END ).
+
+
+/* ---------------------------------------------------------------------
+ * MASTER: Master.execute()
+ *
+ *   state = new SimulationState(createRandomBodies(...), DT);
+ *   for (k ...) workers[k].start();
+ *   for (k ...) workers[k].join();
+ *   return state;
+ * --------------------------------------------------------------------- */
+MASTER = (create_bodies -> START[0]),
+START[k:0..K] = if (k < K) then (start[k] -> START[k+1]) else JOIN[0],
+JOIN[k:0..K]  = if (k < K) then (join[k]  -> JOIN[k+1])  else (sim_done -> END).
+
+
+/* ---------------------------------------------------------------------
+ * Sistema completo.
+ * Due istanze della stessa barriera; per stepCompleted l'azione di barriera
+ * è state::advanceTime, per forcesComputed è vuota (azione nascosta).
+ * sim_done (fine di execute()) chiude anche le due barriere.
+ * --------------------------------------------------------------------- */
+||N_BODY = ( MASTER
+          || forall [i:W] WORKER(i)
+          || fc:BARRIER /{sim_done/fc.dispose}
+          || sc:BARRIER /{advance_time/sc.action, sim_done/sc.dispose}
+          ) \ {fc.action}.
+
+
+/* =====================================================================
+ * PROPRIETÀ DI SAFETY
+ * ===================================================================== */
+
+/* Ordine delle fasi in ogni step: prima K calcoli di velocità (fase A),
+ * poi K aggiornamenti di posizione (fase B), poi un solo vt += dt (fase C).
+ * Una qualunque sovrapposizione tra fasi porta nello stato ERROR. */
+property PHASE_ORDER = PA[0],
+PA[c:0..K] = ( when (c < K)  compute_vel[W] -> PA[c+1]
+             | when (c == K) update_pos[W]  -> PB[1] ),
+PB[c:1..K] = ( when (c < K)  update_pos[W]  -> PB[c+1]
+             | when (c == K) advance_time   -> PA[0] ).
+
+/* Il tempo virtuale avanza esattamente M volte, e il master termina
+ * solo dopo l'ultimo avanzamento (vt finale = M * dt). */
+property VT_FINAL = V[0],
+V[t:0..M] = ( when (t < M)  advance_time -> V[t+1]
+            | when (t == M) sim_done     -> V[t] ).
+
+||CHECK_SAFETY = (N_BODY || PHASE_ORDER || VT_FINAL).
+
+
+/* =====================================================================
+ * PROPRIETÀ FLTL
+ * ===================================================================== */
+
+/* Un worker è "in fase A" da quando inizia a calcolare le velocità a quando
+ * arriva alla barriera fc; "in fase B" da quando inizia ad aggiornare le
+ * posizioni a quando arriva alla barriera sc. */
+fluent PHASE_A[i:W] = <compute_vel[i], fc.arrive[i][G]>
+fluent PHASE_B[i:W] = <update_pos[i],  sc.arrive[i][G]>
+
+/* Nessun worker scrive posizioni (fase B) mentre un altro le sta ancora
+ * leggendo per calcolare le forze (fase A): è l'invariante che le barriere
+ * devono garantire. */
+assert NO_PHASE_OVERLAP = []!(exists[i:W] PHASE_A[i] && exists[j:W] PHASE_B[j])
+
+/* Liveness: la simulazione termina sempre (tutti i worker vengono joinati). */
+assert TERMINATION = <>sim_done
+
+/* Liveness: ogni worker che inizia una fase A arriva prima o poi a
+ * completare la fase B dello stesso step. */
+assert STEP_PROGRESS = forall[i:W] [](compute_vel[i] -> <>update_pos[i])
