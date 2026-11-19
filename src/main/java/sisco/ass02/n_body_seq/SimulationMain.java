@@ -1,16 +1,19 @@
 package sisco.ass02.n_body_seq;
 
 import sisco.ass02.n_body_seq.controller.NBodySimulationExecutor;
-import sisco.ass02.n_body_seq.controller.NBodySimulationSequential;
+//import sisco.ass02.n_body_seq.controller.NBodySimulationSequential;
 
 public class SimulationMain {
 
     public static void main(String[] args) {
 
-    	NBodySimulationExecutor sim = new NBodySimulationExecutor();
+		final int nBodies = 5000;
+    	NBodySimulationExecutor sim = new NBodySimulationExecutor(nBodies);
 	 	//NBodySimulationSequential sim = new NBodySimulationSequential();
 
-    	sim.initRandom(5000);
+    	sim.initRandom(nBodies);
+		sim.setupTask(nBodies);
+
     	int nSteps = 100;
 
     	long startTime = System.currentTimeMillis();

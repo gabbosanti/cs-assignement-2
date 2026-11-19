@@ -8,27 +8,25 @@ import sisco.ass02.n_body_seq.model.V2d;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class NBodySimulationExecutor {
 
 	private final ExecutorService executor;
-    private final List<Callable<Void>> forceTasks;
+    private final List<Callable<V2d>> forceTasks;
     private final List<Callable<Void>> positionTasks;
 
     private List<Body> bodies;
-	private int numWorkers;
+	private int nBodies;
     private double vt;
 	double dt;
 
-	public NBodySimulationExecutor() {
+	public NBodySimulationExecutor(int nBodies) {
+		this.nBodies = nBodies;
         this.executor = Executors.newFixedThreadPool(
                Runtime.getRuntime().availableProcessors() + 1);
-        this.forceTasks = new ArrayList<>();
-        this.positionTasks = new ArrayList<>();
+        this.forceTasks = new ArrayList<>(nBodies);
+        this.positionTasks = new ArrayList<>(nBodies);
     }
 
 	public void initRandom(int nBodies) {
@@ -44,12 +42,7 @@ public class NBodySimulationExecutor {
 			double m = 1 + rand.nextDouble()*9;
 			Body b = new Body(i, new P2d(x, y), new V2d(vx, vy), 0.01, m);
 			bodies.add(b);
-
-			this.forceTasks.add(new ComputeForceTask());
-
 		}
-
-
 
 	}
 
@@ -58,6 +51,7 @@ public class NBodySimulationExecutor {
 		/* init virtual time */
 		vt = 0;
 		dt = 0.001;
+		List<Future<V2d>> totalForce = new ArrayList<>();
 
 		long iter = 0;
 
@@ -65,11 +59,11 @@ public class NBodySimulationExecutor {
             /* simulation loop */
             while (iter < nSteps) {
 
-                executor.invokeAll(forceTasks);
+              totalForce = executor.invokeAll(forceTasks);
 
-                executor.invokeAll(positionTasks);
+              executor.invokeAll(positionTasks);
 
-                iter++;
+			  iter++;
             }
         } finally {
             executor.awaitTermination(Long.MAX_VALUE,TimeUnit.SECONDS);
@@ -80,4 +74,13 @@ public class NBodySimulationExecutor {
 	public int getNumBodies() {
 		return bodies.size();
 	}
+
+    public void setupTask(int nBodies) {
+		for (int i = 0; i < nBodies; i++) {
+
+			Body b = this.bodies.get(i);
+			ComputeForceTask forceTask = new ComputeForceTask(b, bodies);
+
+		}
+    }
 }
