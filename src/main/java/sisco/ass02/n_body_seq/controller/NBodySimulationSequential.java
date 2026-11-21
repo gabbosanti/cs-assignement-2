@@ -7,7 +7,7 @@ import sisco.ass02.n_body_seq.view.SimulationView;
 
 import java.util.*;
 
-public class NBodySimulation {
+public class NBodySimulationSequential {
 
 	private Optional<SimulationView> view;
 
@@ -20,11 +20,11 @@ public class NBodySimulation {
 	/* virtual time step */
 	double dt;
 
-	public NBodySimulation(SimulationView view) {
+	public NBodySimulationSequential(SimulationView view) {
 		this.view = Optional.of(view);
 	}
 	
-	public NBodySimulation() {
+	public NBodySimulationSequential() {
 		this.view = Optional.empty();
 	}
 	
