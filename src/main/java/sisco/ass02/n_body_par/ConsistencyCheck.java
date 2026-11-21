@@ -1,6 +1,6 @@
 package sisco.ass02.n_body_par;
 
-import sisco.ass02.n_body_seq.controller.NBodySimulation;
+import sisco.ass02.n_body_seq.controller.NBodySimulationSequential;
 import sisco.ass02.n_body_seq.model.Body;
 
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ public class ConsistencyCheck {
 
         // Riferimento: sequenziale sugli stessi corpi iniziali.
         ArrayList<Body> expected = Master.createRandomBodies(nBodies, seed);
-        NBodySimulation seq = new NBodySimulation();
+        NBodySimulationSequential seq = new NBodySimulationSequential();
         seq.init(expected);
         seq.execute(nSteps);
         double expectedVt = expectedVirtualTime(nSteps);

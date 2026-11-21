@@ -96,7 +96,7 @@ public class Worker extends Thread {
 
     /**
      * Forza gravitazionale totale su b. Stessa logica (e stesso ordine di somma)
-     * di NBodySimulation.computeTotalGForceOnBody del sequenziale, che è privato
+     * di NBodySimulationSequential.computeTotalGForceOnBody del sequenziale, che è privato
      * e quindi non riusabile direttamente: il calcolo fisico resta in Body.
      */
     private static V2d computeTotalGForceOnBody(Body b, List<Body> bodies) {

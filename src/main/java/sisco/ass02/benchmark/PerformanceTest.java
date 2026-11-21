@@ -1,7 +1,7 @@
 package sisco.ass02.benchmark;
 
 import sisco.ass02.n_body_par.Master;
-import sisco.ass02.n_body_seq.controller.NBodySimulation;
+import sisco.ass02.n_body_seq.controller.NBodySimulationSequential;
 import sisco.ass02.n_body_seq.model.Body;
 
 import java.util.ArrayList;
@@ -108,7 +108,7 @@ public class PerformanceTest {
      */
     private static double runSequential(int nBodies, long nSteps) {
         ArrayList<Body> bodies = Master.createRandomBodies(nBodies, SEED);
-        NBodySimulation sim = new NBodySimulation();
+        NBodySimulationSequential sim = new NBodySimulationSequential();
         sim.init(bodies);
         // GC prima della misura: riduce la probabilità che una raccolta
         // dovuta alla run precedente cada dentro questa.

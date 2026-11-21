@@ -93,7 +93,7 @@ public class Master {
 
     /**
      * Crea n corpi casuali con la stessa distribuzione di
-     * NBodySimulation.initRandom del sequenziale, ma con seme esplicito
+     * NBodySimulationSequential.initRandom del sequenziale, ma con seme esplicito
      * (il sequenziale usa l'ora corrente, quindi non è riproducibile).
      */
     public static ArrayList<Body> createRandomBodies(int n, long seed) {
