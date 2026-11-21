@@ -1,9 +1,6 @@
 package sisco.ass02.n_body_seq.controller;
 
-import sisco.ass02.n_body_seq.model.Body;
-import sisco.ass02.n_body_seq.model.ComputeForceTask;
-import sisco.ass02.n_body_seq.model.P2d;
-import sisco.ass02.n_body_seq.model.V2d;
+import sisco.ass02.n_body_seq.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +10,7 @@ import java.util.concurrent.*;
 public class NBodySimulationExecutor {
 
 	private final ExecutorService executor;
-    private final List<Callable<V2d>> forceTasks;
+    private final List<Callable<Void>> velocityTask;
     private final List<Callable<Void>> positionTasks;
 
     private List<Body> bodies;
@@ -25,7 +22,7 @@ public class NBodySimulationExecutor {
 		this.nBodies = nBodies;
         this.executor = Executors.newFixedThreadPool(
                Runtime.getRuntime().availableProcessors() + 1);
-        this.forceTasks = new ArrayList<>(nBodies);
+        this.velocityTask = new ArrayList<>(nBodies);
         this.positionTasks = new ArrayList<>(nBodies);
     }
 
@@ -46,12 +43,17 @@ public class NBodySimulationExecutor {
 
 	}
 
+	public void setupTask(int nBodies) {
+		for (int i = 0; i < nBodies; i++) {
+
+		}
+	}
+
 	public void execute(long nSteps) throws InterruptedException {
 
 		/* init virtual time */
 		vt = 0;
 		dt = 0.001;
-		List<Future<V2d>> totalForce = new ArrayList<>();
 
 		long iter = 0;
 
@@ -59,14 +61,16 @@ public class NBodySimulationExecutor {
             /* simulation loop */
             while (iter < nSteps) {
 
-              totalForce = executor.invokeAll(forceTasks);
+			  //Execute all UpdateVelocityTask in parallel and  waits for termination
+              executor.invokeAll(velocityTask);
 
-              executor.invokeAll(positionTasks);
+			  //Execute all UpdateVelocityTask in parallel and  waits for termination
+			  executor.invokeAll(positionTasks);
 
+			  vt += dt;
 			  iter++;
             }
         } finally {
-            executor.awaitTermination(Long.MAX_VALUE,TimeUnit.SECONDS);
             executor.shutdown();
         }
 	}
@@ -75,12 +79,4 @@ public class NBodySimulationExecutor {
 		return bodies.size();
 	}
 
-    public void setupTask(int nBodies) {
-		for (int i = 0; i < nBodies; i++) {
-
-			Body b = this.bodies.get(i);
-			ComputeForceTask forceTask = new ComputeForceTask(b, bodies);
-
-		}
-    }
 }

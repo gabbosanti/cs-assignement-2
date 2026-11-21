@@ -5,7 +5,7 @@ import sisco.ass02.n_body_seq.controller.NBodySimulationExecutor;
 
 public class SimulationMain {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
 
 		final int nBodies = 5000;
     	NBodySimulationExecutor sim = new NBodySimulationExecutor(nBodies);
