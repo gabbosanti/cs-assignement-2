@@ -14,12 +14,10 @@ public class NBodySimulationExecutor {
     private final List<Callable<Void>> positionTasks;
 
     private List<Body> bodies;
-	private int nBodies;
     private double vt;
-	double dt;
+	private double dt;
 
 	public NBodySimulationExecutor(int nBodies) {
-		this.nBodies = nBodies;
         this.executor = Executors.newFixedThreadPool(
                Runtime.getRuntime().availableProcessors() + 1);
         this.velocityTask = new ArrayList<>(nBodies);
@@ -28,7 +26,7 @@ public class NBodySimulationExecutor {
 
 	public void initRandom(int nBodies) {
 		Random rand = new Random(System.currentTimeMillis());
-		bodies = new ArrayList<Body>();
+		bodies = new ArrayList<>();
 
 		//Crea randomicamente i corpi
 		for (int i = 0; i < nBodies; i++) {
@@ -46,7 +44,13 @@ public class NBodySimulationExecutor {
 	public void setupTask(int nBodies) {
 		for (int i = 0; i < nBodies; i++) {
 
+			Body b = bodies.get(i);
+
+			velocityTask.add(new UpdateVelocityTask(b, bodies, dt));
+			positionTasks.add(new UpdatePositionTask(b, dt));
+
 		}
+
 	}
 
 	public void execute(long nSteps) throws InterruptedException {

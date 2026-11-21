@@ -15,10 +15,9 @@ public class SimulationMain {
 		sim.setupTask(nBodies);
 
     	int nSteps = 100;
-
     	long startTime = System.currentTimeMillis();
 
-    	log("Starting simulation with " + sim.getNumBodies() + " bodies - " + nSteps + " steps...");
+		log("Starting simulation with " + sim.getNumBodies() + " bodies - " + nSteps + " steps...");
 
     	sim.execute(nSteps);
 
