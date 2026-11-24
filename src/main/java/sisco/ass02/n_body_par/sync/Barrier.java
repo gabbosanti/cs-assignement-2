@@ -39,6 +39,7 @@ public class Barrier {
     /** Numero del ciclo corrente: cambia a ogni rilascio. */
     private long generation;
 
+
     /**
      * Barriera senza azione: si limita a sincronizzare i thread.
      * L'azione è null e in {@link #hitAndWaitAll()} viene semplicemente saltata.

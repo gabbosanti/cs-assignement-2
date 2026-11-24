@@ -1,10 +1,11 @@
 package sisco.ass02.n_body_par;
 
+import java.util.List;
+
 import sisco.ass02.n_body_par.sync.Barrier;
+import sisco.ass02.n_body_par.sync.Controller;
 import sisco.ass02.n_body_seq.model.Body;
 import sisco.ass02.n_body_seq.model.V2d;
-
-import java.util.List;
 
 /**
  * Thread di calcolo: esegue le fasi A e B su una partizione contigua di corpi
@@ -38,9 +39,17 @@ public class Worker extends Thread {
 
     /** Numero di step da eseguire (uguale per tutti i worker). */
     private final long nSteps;
+    private final Barrier stepStarted;
+    private final Controller controller;
 
     public Worker(String name, SimulationState state, int from, int to,
                   Barrier forcesComputed, Barrier stepCompleted, long nSteps) {
+        this(name, state, from, to, forcesComputed, stepCompleted, nSteps, null, null);
+    }
+
+    public Worker(String name, SimulationState state, int from, int to,
+                  Barrier forcesComputed, Barrier stepCompleted, long nSteps,
+                  Barrier stepStarted, Controller controller) {
         super(name);
         this.state = state;
         this.from = from;
@@ -48,12 +57,18 @@ public class Worker extends Thread {
         this.forcesComputed = forcesComputed;
         this.stepCompleted = stepCompleted;
         this.nSteps = nSteps;
+        this.stepStarted = stepStarted;
+        this.controller = controller;
     }
 
     @Override
     public void run() {
         try {
             for (long step = 0; step < nSteps; step++) {
+                if (stepStarted != null) {
+                    stepStarted.hitAndWaitAll();
+                    if (!controller.isStepAllowed()) break;
+                }
                 computeVelocities();            // fase A
                 forcesComputed.hitAndWaitAll();
                 updatePositions();              // fase B
